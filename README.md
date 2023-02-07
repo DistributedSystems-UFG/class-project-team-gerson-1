@@ -16,21 +16,21 @@ $ bin/zookeeper-server-start.sh config/zookeeper.properties
 
 $ bin/kafka-server-start.sh config/server.properties
 
-(If necessary, edit the server.properties file to change the IP address of the Kafka Broker) 
-
+(If necessary, edit the server.properties file to change the IP address of the Kafka Broker)
 
 ### b. On another cloud-based server (server-2):
 
 - Install gRPC for Python - see instructions on https://grpc.io/docs/languages/python/quickstart/
 
-- Clone the repo: 
+- Clone the repo:
 
 $ git clone https://github.com/professorfabio/SSU-2022_2-StarterProject.git
+
 - Compile the interface (protocol buffer definition):
 
 $ cd CloudCode/python
 
-$ python3 -m grpc_tools.protoc -I../protos --python_out=. --grpc_python_out=. ../protos/iot_service.proto
+$ python3 -m grpc_tools.protoc -I ../protos --python_out=. --grpc_python_out=. ../protos/iot_service.proto
 
 - Run virtual_device_service.py (it contains the cloud-based Consumer and Producer, and well as the gRPC service):
 
@@ -74,7 +74,7 @@ $ python3 -m grpc_tools.protoc -I../protos --python_out=. --grpc_python_out=. ..
 
 $ python3 thermometer_client.py
 
-$ python3 led_client.py 1 red  --or-- $ python3 led_client.py 0 red (turn on and off, respectively. Just examples)
+$ python3 led_client.py 1 red --or-- $ python3 led_client.py 0 red (turn on and off, respectively. Just examples)
 
 (If necessary, edit the const.py file with the IP address of the gRPC server -- server-2)
 

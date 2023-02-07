@@ -14,6 +14,23 @@ service IoTService {
   
   // Send a command to the led
   rpc BlinkLed (LedRequest) returns (LedReply) {}
+
+  // List all devices
+  rpc GetDevices (DeviceRequest) returns (DeviceReply) {}
+}
+
+message DeviceRequest {
+}
+
+message DeviceReply {
+  repeated DeviceItem devices = 1;
+}
+
+message DeviceItem {
+  string deviceId = 1;
+  string state = 2;
+  string name = 3;
+  string type = 4;
 }
 
 // The request message containing the user's name.
@@ -27,10 +44,10 @@ message TemperatureReply {
 }
 
 message LedRequest {
-  uint32 state = 1;
-  string ledname =2;
+  string deviceId = 1;
+  string state = 2;
 }
 
 message LedReply {
-  map<string, uint32> ledstate = 1;
+  map<string, string> device = 1;
 }
