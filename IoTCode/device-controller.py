@@ -71,7 +71,14 @@ DEVICE_TABLE = {
         'extra': {
             'temperature': 'void'
         }
-    }
+    },
+    '4': {
+        'name': 'LED Azul',
+        'pin': 20,
+        'state': DeviceStatus.OFF,
+        'type': DeviceType.LED,
+        'extra': { }
+    },
 }
 
 producer = KafkaProducer(
