@@ -115,6 +115,7 @@ def consume_led_command():
         message = json.loads(msg.value.decode())
         device_id = message['id']
         device = DEVICE_TABLE[device_id]
+        device['state'] = DeviceStatus(message['state'])
         print(device)
         if device['type'] == DeviceType.LED:
             GPIO.output(device['pin'], GPIO.HIGH if device['state'] == DeviceStatus.ON else GPIO.LOW)
