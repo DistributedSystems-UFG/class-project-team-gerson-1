@@ -56,7 +56,7 @@ DEVICE_TABLE = {
         'extra': { }
     },
     '2': {
-        'name': 'LED Azul',
+        'name': 'LED Verde',
         'pin': 18,
         'state': DeviceStatus.OFF,
         'type': DeviceType.LED,
