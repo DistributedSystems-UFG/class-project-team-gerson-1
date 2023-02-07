@@ -9,10 +9,10 @@ import threading
 
 from const import *
 
-# base_dir = '/sys/bus/w1/devices/'
-# device_folder = glob.glob(base_dir + '28*')[0]
-# device_file = device_folder + '/w1_slave'
-# last_reported = 0
+base_dir = '/sys/bus/w1/devices/'
+device_folder = glob.glob(base_dir + '28*')[0]
+device_file = device_folder + '/w1_slave'
+last_reported = 0
 
 # Initialize GPIO
 GPIO.setwarnings(False) # Ignore warning for now
@@ -20,23 +20,23 @@ GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
 GPIO.setup(16, GPIO.OUT, initial=GPIO.LOW) # Set pin 16 to be an output pin and set initial value to low (off)
 GPIO.setup(18, GPIO.OUT, initial=GPIO.LOW) # Idem for pin 18
 
-# def read_temp_raw():
-#     f = open(device_file, 'r')
-#     lines = f.readlines()
-#     f.close()
-#     return lines
+def read_temp_raw():
+    f = open(device_file, 'r')
+    lines = f.readlines()
+    f.close()
+    return lines
 
-# def read_temp():
-#     lines = read_temp_raw()
-#     while lines[0].strip()[-3:] != 'YES':
-#         time.sleep(0.2)
-#         lines = read_temp_raw()
-#     equals_pos = lines[1].find('t=')
-#     if equals_pos != -1:
-#         temp_string = lines[1][equals_pos+2:]
-#         temp_c = float(temp_string) / 1000.0
-#         temp_f = temp_c * 9.0 / 5.0 + 32.0
-#         return temp_c, temp_f
+def read_temp():
+    lines = read_temp_raw()
+    while lines[0].strip()[-3:] != 'YES':
+        time.sleep(0.2)
+        lines = read_temp_raw()
+    equals_pos = lines[1].find('t=')
+    if equals_pos != -1:
+        temp_string = lines[1][equals_pos+2:]
+        temp_c = float(temp_string) / 1000.0
+        temp_f = temp_c * 9.0 / 5.0 + 32.0
+        return temp_c, temp_f
 
 class DeviceType(Enum):
     LED = "LED"
@@ -137,16 +137,16 @@ thread_request_device_sync.start()
 sync_all_devices()
 
 while True:
-    # device = DEVICE_TABLE['3']
-    # if device['state'] == DeviceStatus.ON:
-    #     (temp_c, temp_f) = read_temp()
-    #     print(temp_c, temp_f)
-    #     if (math.fabs(temp_c - last_reported) >= 0.1):
-    #         last_reported = temp_c
-    #         new_temperature = temp_c
-    #         print(f'New temperature: {new_temperature}')
-    #         device['extra']['temperature'] = str(new_temperature)
-    #         message = json.dumps({ 'temperature': new_temperature })
-    #         producer.send(NEW_TEMPERATURE_TOPIC, message.encode())
-    #         sync_device('3')
+    device = DEVICE_TABLE['3']
+    if device['state'] == DeviceStatus.ON:
+        (temp_c, temp_f) = read_temp()
+        print(temp_c, temp_f)
+        if (math.fabs(temp_c - last_reported) >= 0.1):
+            last_reported = temp_c
+            new_temperature = temp_c
+            print(f'New temperature: {new_temperature}')
+            device['extra']['temperature'] = str(new_temperature)
+            message = json.dumps({ 'temperature': new_temperature })
+            producer.send(NEW_TEMPERATURE_TOPIC, message.encode())
+            sync_device('3')
     time.sleep(1)
