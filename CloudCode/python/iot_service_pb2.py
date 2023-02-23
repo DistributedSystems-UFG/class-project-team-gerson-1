@@ -10,9 +10,6 @@ from google.protobuf import symbol_database as _symbol_database
 
 _sym_db = _symbol_database.Default()
 
-
-
-
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11iot_service.proto\x12\x0biot_service\"\x0f\n\rDeviceRequest\"7\n\x0b\x44\x65viceReply\x12(\n\x07\x64\x65vices\x18\x01 \x03(\x0b\x32\x17.iot_service.DeviceItem\"I\n\nDeviceItem\x12\x10\n\x08\x64\x65viceId\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0c\n\x04type\x18\x04 \x01(\t\"(\n\x12TemperatureRequest\x12\x12\n\nsensorName\x18\x01 \x01(\t\"\'\n\x10TemperatureReply\x12\x13\n\x0btemperature\x18\x01 \x01(\t\"-\n\nLedRequest\x12\x10\n\x08\x64\x65viceId\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\t\"l\n\x08LedReply\x12\x31\n\x06\x64\x65vice\x18\x01 \x03(\x0b\x32!.iot_service.LedReply.DeviceEntry\x1a-\n\x0b\x44\x65viceEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x32\xe4\x01\n\nIoTService\x12R\n\x0eSayTemperature\x12\x1f.iot_service.TemperatureRequest\x1a\x1d.iot_service.TemperatureReply\"\x00\x12<\n\x08\x42linkLed\x12\x17.iot_service.LedRequest\x1a\x15.iot_service.LedReply\"\x00\x12\x44\n\nGetDevices\x12\x1a.iot_service.DeviceRequest\x1a\x18.iot_service.DeviceReply\"\x00\x42\x37\n\x1bio.grpc.examples.iotserviceB\x0fIoTServiceProtoP\x01\xa2\x02\x04TEMPb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())

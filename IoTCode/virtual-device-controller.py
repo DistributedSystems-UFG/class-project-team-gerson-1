@@ -63,7 +63,6 @@ def sync_device(device_id: str):
         'extra': DEVICE_TABLE[device_id]['extra']
     })
     producer.send(DEVICE_SYNC_TOPIC, key=device_id.encode(), value = message.encode())
-    producer.flush()
     print(f'Syncing device: {message}')
 
 def new_consumer(topic):
