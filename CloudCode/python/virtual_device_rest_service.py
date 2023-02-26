@@ -14,14 +14,16 @@ from flask import Flask, request
 
 import jwt
 
+print(MONGO_URL)
 client = pymongo.MongoClient(MONGO_URL)
 db = client.iot
 
 app = Flask(__name__)
 CORS(app)
 
-# Current temperature state
-CURRENT_TEMPERATURE = 'void'
+GLOBAL = {
+    "temperature": "void"
+}
 
 # Table representing twin leds and sensors
 TWIN_DEVICE_TABLE = {}
@@ -58,19 +60,19 @@ def new_consumer(topics):
         security_protocol='SASL_SSL',
         sasl_mechanism='PLAIN',
         sasl_plain_username=KAFKA_USER,
-        sasl_plain_password=KAFKA_PASSWORD
+        sasl_plain_password=KAFKA_PASSWORD,
     )
     consumer.subscribe(topics=topics)
     return consumer
 
 def consume_temperature():
-    global CURRENT_TEMPERATURE
     consumer = new_consumer(NEW_TEMPERATURE_TOPIC)
     for msg in consumer:
         event = json.loads(msg.value.decode())
         print(f"Temperature event: {event}")
         db.temperatures.insert_one({ "temperature": event['temperature'], "created_at": datetime.now()})
-        CURRENT_TEMPERATURE = event['temperature']
+        GLOBAL["temperature"] = event['temperature']
+        print(GLOBAL["temperature"])
 
 def consume_device_sync():
     consumer = new_consumer(DEVICE_SYNC_TOPIC)
@@ -80,6 +82,7 @@ def consume_device_sync():
         device_id = event['id']
         event.pop('id', None)
         TWIN_DEVICE_TABLE[device_id] = event
+        print(TWIN_DEVICE_TABLE)
 
 def request_device_sync():
     time.sleep(2)
@@ -91,14 +94,20 @@ def produce_led_command(device_id: str, state: str):
         
 class IotService():
 
-    def device_allowed(self, device_id, user_id):
+    def _is_admin(self, user_id):
+        user = db.users.find_one({ "_id": ObjectId(user_id) })
+        if user == None:
+            return False
+        return user["type"] == "ADMIN"
+
+    def _device_allowed(self, device_id, user_id):
         user = db.users.find_one({ "_id": ObjectId(user_id) })
         if user == None:
             return False
         return int(device_id) in user['devices_allowed']
     
     def get_all_temperatures(self, user_id):
-        if not self.device_allowed("3", user_id):
+        if not self._device_allowed("3", user_id):
             return { "message": "Device unauthorized" }, 403
         result = db.temperatures.find({ 
             'created_at': {
@@ -107,20 +116,37 @@ class IotService():
         })
         temperatures = []
         for temp in result:
-            temperatures.append({ "temperature": temp["temperature"], "created_at": str(temp["created_at"]) })
+            print(temp)
+            temperatures.append({ "temperature": temp["temperature"], "created_at": temp["created_at"].isoformat() })
         return { "temperatures": temperatures }, 200
 
     def say_temperature(self, user_id):
-        if not self.device_allowed("3", user_id):
+        if not self._device_allowed("3", user_id):
             return { "message": "Device unauthorized" }, 403
-        return { "temperature": CURRENT_TEMPERATURE }, 200
+        print(GLOBAL["temperature"])
+        return { "temperature": GLOBAL["temperature"] }, 200
+    
+    def get_users(self, user_id):
+        if not self._is_admin(user_id):
+            return { "message": "Operation unauthorized" }, 403
+        result = db.users.find({ "type": "COMMON" })
+        users = []
+        for user in result:
+            if str(user['_id']) != user_id:
+                users.append({ **user, '_id': str(user['_id'])})
+        return { "users": users }, 200
+
+    def get_all_devices(self):
+        devices = []
+        for device_id in TWIN_DEVICE_TABLE.keys():
+            device = TWIN_DEVICE_TABLE[str(device_id)]
+            devices.append({ **device, 'id': device_id })
+        return devices
 
     def get_devices(self, user_id):
         user = db.users.find_one({ "_id": ObjectId(user_id) })
-
         if user == None:
             return []
-
         devices = []
         for device_id in user['devices_allowed']:
             if str(device_id) in TWIN_DEVICE_TABLE.keys():
@@ -129,7 +155,7 @@ class IotService():
         return devices
     
     def blink_led(self, user_id, device_id, state):
-        if not self.device_allowed(device_id, user_id):
+        if not self._device_allowed(device_id, user_id):
             return { "message": "Device unauthorized" }, 403
 
         if (device_id in TWIN_DEVICE_TABLE.keys()):
@@ -142,7 +168,7 @@ class IotService():
         user = db.users.find_one({ "_id": ObjectId(user_id) })
         if user == None:
             return { "message": "User not found" }, 404
-        return { 'name': user['name'], 'email': user['email']}, 200
+        return { 'name': user['name'], 'email': user['email'], 'type': user['type']}, 200
     
     def login(self, request):
         user = db.users.find_one({ "email": request['email'] })
@@ -151,13 +177,19 @@ class IotService():
 
         if user['password'] == request['password']:
             token_payload = {
-                "exp": datetime.now() + timedelta(days=2),
+                "exp": datetime.now() + timedelta(days=60),
                 "iss": str(user['_id'])
             }
             encoded_jwt = jwt.encode(token_payload, JWT_SECRET, algorithm="HS256")
             return { "token": encoded_jwt }, 200
 
         return { "message": "Incorrect password" }, 401
+
+    def update_user_devices(self, user_id, selected_user_id, request):
+        if not self._is_admin(user_id):
+            return { "message": "Operation unauthorized" }, 403
+        db.users.update_one({ "_id": ObjectId(selected_user_id) }, { "$set": { "devices_allowed": request["devices"] }})
+        return { "message": "User updated" }, 204
 
 def serve():
     iot_service = IotService()
@@ -180,6 +212,12 @@ def serve():
         print("Getting all allowed devices")
         return {"devices": iot_service.get_devices(user_id)}
     
+    @app.get("/devices/all")
+    @token_required
+    def get_all_devices(user_id):
+        print("Getting all devices")
+        return {"devices": iot_service.get_all_devices()}
+    
     @app.patch("/blink/<device_id>/<state>")
     @token_required
     def blink(user_id, device_id, state):
@@ -193,6 +231,16 @@ def serve():
     @token_required
     def me(user_id):
         return iot_service.me(user_id)
+    
+    @app.get("/users")
+    @token_required
+    def get_users(user_id):
+        return iot_service.get_users(user_id)
+    
+    @app.patch("/users/<selected_user_id>/devices")
+    @token_required
+    def update_user_devices(user_id, selected_user_id):
+        return iot_service.update_user_devices(user_id, selected_user_id, request.get_json())
 
     app.run(host='0.0.0.0', port=8080, debug=True)
 

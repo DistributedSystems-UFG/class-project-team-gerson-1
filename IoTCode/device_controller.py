@@ -124,7 +124,7 @@ def consume_led_command():
         device_id = message['id']
         device = DEVICE_TABLE[device_id]
         device['state'] = DeviceStatus(message['state'])
-        print(device)
+      
         if device['type'] == DeviceType.LED:
             GPIO.output(device['pin'], GPIO.HIGH if device['state'] == DeviceStatus.ON else GPIO.LOW)
         device['state'] = DeviceStatus(message['state'])
@@ -156,5 +156,6 @@ while True:
             device['extra']['temperature'] = str(new_temperature)
             message = json.dumps({ 'temperature': new_temperature })
             producer.send(NEW_TEMPERATURE_TOPIC, message.encode())
+            producer.flush()
             sync_device('3')
     time.sleep(1)
