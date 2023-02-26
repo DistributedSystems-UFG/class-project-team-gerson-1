@@ -1,0 +1,19 @@
+version: "3.2"
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.server
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8080:8080"
+    depends_on:
+      - iot
+
+  iot:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.iot
+    environment:
+      - PYTHONUNBUFFERED=1

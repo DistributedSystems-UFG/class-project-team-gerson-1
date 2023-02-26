@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iot-device
+  labels:
+    app: iot-device
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iot-device
+  template:
+    metadata:
+      labels:
+        app: iot-device
+    spec:
+      containers:
+        - name: iot-device
+          image: guilhermefaleiros/iot-device:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "0.05"
+              memory: 20Mi
+            limits:
+              cpu: "0.05"
+              memory: 25Mi

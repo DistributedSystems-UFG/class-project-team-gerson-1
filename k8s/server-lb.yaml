@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: iot-server-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: iot-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
